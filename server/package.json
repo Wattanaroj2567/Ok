@@ -16,7 +16,12 @@
         "lint:fix": "eslint . --fix",
         "format": "prettier --write \"src/*/.js\" \"*.js\""
     },
-    "keywords": [],
+    "keywords": [
+        "express",
+        "sequelize",
+        "mysql",
+        "jwt"
+    ],
     "author": "",
     "license": "ISC",
     "dependencies": {

@@ -1,12 +1,12 @@
 const debug = require('debug')('app:controller:user');
-const bcrypt = require('bcryptjs');
-const User = require('@/models/User');
+const userService = require('@/services/userService'); // 1. เรียกใช้ Service
 
 // GET /api/user/profile - ดึงข้อมูลโปรไฟล์ผู้ใช้
 const getProfile = async (req, res) => {
+    // Logic ส่วนนี้ไม่ซับซ้อน สามารถคงไว้ที่ Controller ได้
     try {
         const user = req.user;
-        debug('Getting profile for user:', user.id);
+        debug('Get profile request for user:', user.id);
         res.json({
             success: true,
             user: {
@@ -18,34 +18,21 @@ const getProfile = async (req, res) => {
             },
         });
     } catch (error) {
-        debug('Get profile error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'เกิดข้อผิดพลาดในการดึงข้อมูลโปรไฟล์',
-        });
+        debug('Get profile controller error:', error);
+        res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาด' });
     }
 };
 
 // PUT /api/user/profile - อัปเดตข้อมูลโปรไฟล์
 const updateProfile = async (req, res) => {
     try {
-        const user = req.user;
-        // รับข้อมูลเฉพาะ displayName และ profileImage เพื่อป้องกันการอัปเดต field อื่น
-        const { displayName, profileImage } = req.body;
-        debug('Updating profile for user:', user.id, {
-            displayName,
-            profileImage,
-        });
-
-        await user.update({ displayName, profileImage });
-
-        debug('Profile updated successfully for user:', user.id);
+        await userService.updateProfile(req.user, req.body);
         res.json({ success: true, message: 'อัปเดตโปรไฟล์สำเร็จ' });
     } catch (error) {
-        debug('Update profile error:', error);
+        debug('Update profile controller error:', error.message);
         res.status(500).json({
             success: false,
-            message: 'เกิดข้อผิดพลาดในการอัปเดตโปรไฟล์',
+            message: error.message || 'เกิดข้อผิดพลาดในการอัปเดตโปรไฟล์',
         });
     }
 };
@@ -53,28 +40,14 @@ const updateProfile = async (req, res) => {
 // PUT /api/user/email - เปลี่ยนอีเมล
 const changeEmail = async (req, res) => {
     try {
-        const user = req.user;
-        const { newEmail } = req.body;
-        debug('Changing email for user:', user.id, 'to:', newEmail);
-
-        // ตรวจสอบอีเมลซ้ำ
-        const existingUser = await User.findOne({ where: { email: newEmail } });
-        if (existingUser && existingUser.id !== user.id) {
-            debug('Email already exists:', newEmail);
-            return res
-                .status(400)
-                .json({ success: false, message: 'อีเมลนี้ถูกใช้งานแล้ว' });
-        }
-
-        await user.update({ email: newEmail });
-
-        debug('Email changed successfully for user:', user.id);
+        await userService.changeEmail(req.user, req.body.newEmail);
         res.json({ success: true, message: 'เปลี่ยนอีเมลสำเร็จ' });
     } catch (error) {
-        debug('Change email error:', error);
-        res.status(500).json({
+        debug('Change email controller error:', error.message);
+        const statusCode = error.message.includes('ถูกใช้งานแล้ว') ? 400 : 500;
+        res.status(statusCode).json({
             success: false,
-            message: 'เกิดข้อผิดพลาดในการเปลี่ยนอีเมล',
+            message: error.message || 'เกิดข้อผิดพลาดในการเปลี่ยนอีเมล',
         });
     }
 };
@@ -82,30 +55,15 @@ const changeEmail = async (req, res) => {
 // PUT /api/user/password - เปลี่ยนรหัสผ่าน
 const changePassword = async (req, res) => {
     try {
-        const user = req.user;
         const { oldPassword, newPassword } = req.body;
-        debug('Changing password for user:', user.id);
-
-        // ตรวจสอบรหัสผ่านเดิม
-        const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch) {
-            debug('Old password mismatch for user:', user.id);
-            return res
-                .status(400)
-                .json({ success: false, message: 'รหัสผ่านเดิมไม่ถูกต้อง' });
-        }
-
-        // เข้ารหัสรหัสผ่านใหม่
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        await user.update({ password: hashedPassword });
-
-        debug('Password changed successfully for user:', user.id);
+        await userService.changePassword(req.user, oldPassword, newPassword);
         res.json({ success: true, message: 'เปลี่ยนรหัสผ่านสำเร็จ' });
     } catch (error) {
-        debug('Change password error:', error);
-        res.status(500).json({
+        debug('Change password controller error:', error.message);
+        const statusCode = error.message.includes('ไม่ถูกต้อง') ? 400 : 500;
+        res.status(statusCode).json({
             success: false,
-            message: 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน',
+            message: error.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน',
         });
     }
 };
@@ -113,18 +71,13 @@ const changePassword = async (req, res) => {
 // DELETE /api/user - ลบบัญชีผู้ใช้
 const deleteAccount = async (req, res) => {
     try {
-        const user = req.user;
-        debug('Deleting account for user:', user.id);
-
-        await user.destroy();
-
-        debug('Account deleted successfully for user:', user.id);
+        await userService.deleteAccount(req.user);
         res.json({ success: true, message: 'ลบบัญชีผู้ใช้สำเร็จ' });
     } catch (error) {
-        debug('Delete account error:', error);
+        debug('Delete account controller error:', error.message);
         res.status(500).json({
             success: false,
-            message: 'เกิดข้อผิดพลาดในการลบบัญชี',
+            message: error.message || 'เกิดข้อผิดพลาดในการลบบัญชี',
         });
     }
 };

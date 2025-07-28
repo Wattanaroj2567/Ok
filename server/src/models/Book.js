@@ -1,68 +1,44 @@
-const debug = require('debug')('app:model:book');
-const { DataTypes, Op } = require('sequelize');
-const sequelize = require('@/config/database');
+const { Model, DataTypes } = require('sequelize');
 
-/**
- * Book Model สำหรับแสดงรายการหนังสือให้ผู้ใช้เลือกรีวิว
- * ไม่รวมฟังก์ชันจัดการหนังสือแบบเต็ม (CRUD โดยแอดมิน)
- */
-const Book = sequelize.define('Book', {
-    title: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        comment: 'ชื่อหนังสือ'
-    },
-    author: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        comment: 'ชื่อผู้แต่ง'
-    },
-    description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-        comment: 'เรื่องย่อหรือคำอธิบายหนังสือ'
-    },
-    coverImage: {
-        type: DataTypes.STRING,
-        allowNull: true,
-        defaultValue: 'default-book-cover.jpg',
-        comment: 'URL หรือ path ของรูปปกหนังสือ'
-    },
-    averageRating: {
-        type: DataTypes.FLOAT,
-        defaultValue: 0,
-        comment: 'คะแนนเฉลี่ยจากรีวิวทั้งหมด'
-    },
-    totalReviews: {
-        type: DataTypes.INTEGER,
-        defaultValue: 0,
-        comment: 'จำนวนรีวิวทั้งหมด'
+module.exports = (sequelize) => {
+    class Book extends Model {
+        static associate(models) {
+            // Book มีได้หลาย Review
+            this.hasMany(models.Review, {
+                foreignKey: 'bookId',
+                as: 'reviews',
+                onDelete: 'CASCADE',
+            });
+        }
     }
-});
 
-// ฟังก์ชันพื้นฐานสำหรับการแสดงรายการหนังสือ
-Book.getBookList = async function(page = 1, limit = 12) {
-    try {
-        return await Book.findAndCountAll({
-            limit,
-            offset: (page - 1) * limit,
-            order: [['title', 'ASC']],
-            attributes: ['id', 'title', 'author', 'coverImage', 'averageRating', 'totalReviews']
-        });
-    } catch (error) {
-        debug('Error getting book list:', error);
-        throw error;
-    }
+    Book.init(
+        {
+            title: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            author: {
+                type: DataTypes.STRING,
+                allowNull: false,
+            },
+            description: {
+                type: DataTypes.TEXT,
+            },
+            coverImage: {
+                type: DataTypes.STRING,
+                defaultValue: '/uploads/covers/default-book-cover.png',
+            },
+            publishedYear: {
+                type: DataTypes.INTEGER,
+            },
+        },
+        {
+            sequelize,
+            modelName: 'Book',
+            timestamps: true,
+        },
+    );
+
+    return Book;
 };
-
-// ฟังก์ชันดึงข้อมูลหนังสือเพื่อแสดงรายละเอียด
-Book.getBookDetail = async function(id) {
-    try {
-        return await Book.findByPk(id);
-    } catch (error) {
-        debug('Error getting book detail:', error);
-        throw error;
-    }
-};
-
-module.exports = Book;

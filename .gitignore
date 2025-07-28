@@ -1,17 +1,8 @@
 # Dependencies
 node_modules/
-client/node_modules/
-server/node_modules/
-
-# Build output
-client/dist/
-client/.vite/
 
 # Environment files
 .env
-client/.env
-server/.env
-.env.*
 
 # Logs
 npm-debug.log*
@@ -30,11 +21,6 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-
-# OS specific
-.DS_Store
-Thumbs.db
-desktop.ini
 
 # .gitignore
 uploads/*
