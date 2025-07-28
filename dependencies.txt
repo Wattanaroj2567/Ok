@@ -1,0 +1,30 @@
+# === Server dependencies ===
+cd server
+npm install express sequelize mysql2 dotenv bcryptjs jsonwebtoken module-alias cors helmet multer debug
+
+# === Server devDependencies ===
+npm install --save-dev nodemon cross-env jest supertest eslint prettier eslint-config-prettier eslint-plugin-prettier
+
+# === Client dependencies ===
+cd client
+npm install react react-dom react-router-dom axios @mui/material @mui/icons-material @emotion/react @emotion/styled
+
+# === Client devDependencies ===
+npm install --save-dev vite @vitejs/plugin-react eslint prettier eslint-config-prettier eslint-plugin-prettier eslint-plugin-react
+
+# === Server run & test scripts (package.json) ===
+# npm run dev        → cross-env NODE_ENV=development DEBUG=app:* nodemon -r module-alias/register server.js
+# npm start          → cross-env NODE_ENV=production node -r module-alias/register server.js
+# npm test           → cross-env NODE_ENV=test jest --coverage
+# npm run test:watch → cross-env NODE_ENV=test jest --watch
+# npm run lint       → eslint .
+# npm run lint:fix   → eslint . --fix
+# npm run format     → prettier --write "src/**/*.js" "*.js"
+
+# === Client run & build scripts (client/package.json) ===
+# npm run dev     → vite
+# npm run build   → vite build
+# npm run preview → vite preview
+# npm run lint    → eslint .
+# npm run lint:fix→ eslint . --fix
+# npm run format  → prettier --write "src/**/*.jsx" "src/**/*.js" "*.js"
